@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(fcu_io)
 
 find_package(catkin REQUIRED COMPONENTS
+  message_generation
   roscpp
   fcu_common
   sensor_msgs
@@ -20,6 +21,11 @@ add_service_files(
   ParamRequestList.srv
   ParamRequestRead.srv
   ParamSet.srv
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
 )
 
 catkin_package(
@@ -42,6 +48,7 @@ include_directories(
 # mavrosflight library
 add_library(mavrosflight
   src/mavrosflight/mavrosflight.cpp
+  src/mavrosflight/param_manager.cpp
 )
 add_dependencies(mavrosflight ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(mavrosflight
