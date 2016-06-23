@@ -45,6 +45,7 @@ private:
   void servoOutputRawCallback(uint32_t time_usec, uint8_t port, uint16_t values[8]);
   void rcRawCallback(uint32_t time_usec, uint8_t port, uint16_t values[8]);
   void diffPressCallback(int16_t diff_pressure, int16_t temperature);
+  void baroCallback(int16_t diff_pressure, int16_t temperature);
   void commandAckCallback(uint16_t command, uint8_t result);
   void namedValueIntCallback(uint32_t time, std::string name, int32_t value);
   void namedValueFloatCallback(uint32_t time, std::string name, float value);
@@ -65,6 +66,7 @@ private:
   ros::Publisher rc_raw_pub_;
   ros::Publisher diff_pressure_pub_;
   ros::Publisher temperature_pub_;
+  ros::Publisher baro_pub_;
   std::map<std::string, ros::Publisher> named_value_int_pubs_;
   std::map<std::string, ros::Publisher> named_value_float_pubs_;
 
@@ -79,3 +81,4 @@ private:
 } // namespace fcu_io
 
 #endif // FCU_IO_MAVROSFLIGHT_ROS_H
+

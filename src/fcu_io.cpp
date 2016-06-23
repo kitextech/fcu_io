@@ -23,6 +23,7 @@ fcuIO::fcuIO()
   rc_raw_pub_ = nh.advertise<fcu_common::ServoOutputRaw>("rc_raw", 1);
   diff_pressure_pub_ = nh.advertise<sensor_msgs::FluidPressure>("diff_pressure", 1);
   temperature_pub_ = nh.advertise<sensor_msgs::Temperature>("temperature", 1);
+  baro_pub_ = nh.advertise<std_msgs::Float32>("baro/alt", 1);
 
   param_request_list_srv_ = nh.advertiseService("param_request_list", &fcuIO::paramRequestListSrvCallback, this);
   param_request_read_srv_ = nh.advertiseService("param_request_read", &fcuIO::paramRequestReadSrvCallback, this);
@@ -49,10 +50,10 @@ fcuIO::fcuIO()
   mavrosflight_->register_servo_output_raw_callback(boost::bind(&fcuIO::servoOutputRawCallback, this, _1, _2, _3));
   mavrosflight_->register_rc_raw_callback(boost::bind(&fcuIO::rcRawCallback, this, _1, _2, _3));
   mavrosflight_->register_diff_press_callback(boost::bind(&fcuIO::diffPressCallback, this, _1, _2));
+  mavrosflight_->register_baro_callback(boost::bind(&fcuIO::baroCallback, this, _1, _2));
   mavrosflight_->register_command_ack_callback(boost::bind(&fcuIO::commandAckCallback, this, _1, _2));
   mavrosflight_->register_named_value_int_callback(boost::bind(&fcuIO::namedValueIntCallback, this, _1, _2, _3));
   mavrosflight_->register_named_value_float_callback(boost::bind(&fcuIO::namedValueFloatCallback, this, _1, _2, _3));
-
   mavrosflight_->send_param_request_list(1);
 }
 
@@ -234,6 +235,53 @@ void fcuIO::diffPressCallback(int16_t diff_pressure, int16_t temperature)
   else
   {
     _diff_pres_offset += diff_press_pa_raw;
+    calibration_counter++;
+  }
+}
+
+void fcuIO::baroCallback(int16_t pressure, int16_t temperature)
+{
+  // calibration variables
+  static int calibration_counter = 0;
+  static double calibration_sum = 0;
+  static int settling_count = 20; // settle for a second or so
+  static int calibration_count = 20;
+
+  // offsets and filters
+  static double prev_alt = 0.0;
+  static double alt_alpha = 0.01; // really slow
+  static double alt_ground = 0;
+
+  if( calibration_counter > calibration_count + settling_count)
+  {
+    double alt_tmp = (1.0f - pow(pressure/101325.0f, 0.190295f)) * 4430.0f; // in meters
+
+    // offset calculated ground altitude
+    alt_tmp -= alt_ground;
+
+    // LPF measurements
+    double altitude = alt_alpha*alt_tmp + (1.0 - alt_alpha)*prev_alt;
+    prev_alt = altitude;
+
+    // publish measurement
+    std_msgs::Float32 alt_msg;
+    alt_msg.data = altitude;
+    baro_pub_.publish(alt_msg);
+  }
+  if (calibration_counter < settling_count)
+  {
+    calibration_counter++;
+  }
+  else if (calibration_counter < settling_count + calibration_count)
+  {
+    double measurement = (1.0f - pow(pressure/101325.0f, 0.190295f)) * 4430.0f;
+    calibration_sum += measurement;
+    calibration_counter++;
+  }
+  else if(calibration_counter == settling_count + calibration_count)
+  {
+    alt_ground = calibration_sum/calibration_count;
+    ROS_INFO_STREAM("BARO CALIBRATED " << alt_ground << " meters above sea level");
     calibration_counter++;
   }
 }
