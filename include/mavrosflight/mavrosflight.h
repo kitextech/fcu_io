@@ -10,6 +10,7 @@
 #include <mavrosflight/mavlink_listener_interface.h>
 #include <mavrosflight/mavlink_serial.h>
 #include <mavrosflight/param_manager.h>
+#include <mavrosflight/sensor_manager.h>
 
 #include <boost/function.hpp>
 
@@ -38,6 +39,7 @@ public:
   // public member objects
   MavlinkSerial serial;
   ParamManager param;
+  SensorManager sensor;
 
 private:
 
