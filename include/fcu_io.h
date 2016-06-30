@@ -27,6 +27,21 @@
 
 #include <mavrosflight/mavrosflight.h>
 
+typedef struct
+{
+  int max;
+  int min;
+  int center;
+} rc_channel_t;
+
+typedef struct
+{
+  rc_channel_t x;
+  rc_channel_t y;
+  rc_channel_t z;
+  rc_channel_t F;
+} calibration_t;
+
 namespace fcu_io
 {
 
@@ -76,6 +91,8 @@ private:
   ros::ServiceServer param_write_srv_;
 
   mavrosflight::MavROSflight* mavrosflight_;
+
+  calibration_t calibration_offset_;
 };
 
 } // namespace fcu_io

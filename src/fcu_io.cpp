@@ -30,9 +30,24 @@ fcuIO::fcuIO()
   param_set_srv_ = nh.advertiseService("param_set", &fcuIO::paramSetSrvCallback, this);
   param_write_srv_ = nh.advertiseService("param_write", &fcuIO::paramWriteSrvCallback, this);
 
+
   ros::NodeHandle nh_private("~");
   std::string port = nh_private.param<std::string>("port", "/dev/ttyUSB0");
   int baud_rate = nh_private.param<int>("baud_rate", 115200);
+
+  // Get RC Offsets from param
+  calibration_offset_.x.max = nh_private.param<int>("x/max", 2000);
+  calibration_offset_.x.center = nh_private.param<int>("x/center", 1500);
+  calibration_offset_.x.min = nh_private.param<int>("x/min", 1000);
+  calibration_offset_.y.max = nh_private.param<int>("y/max", 2000);
+  calibration_offset_.y.center = nh_private.param<int>("y/center", 1500);
+  calibration_offset_.y.min = nh_private.param<int>("y/min", 1000);
+  calibration_offset_.z.max = nh_private.param<int>("z/max", 2000);
+  calibration_offset_.z.center = nh_private.param<int>("z/center", 1500);
+  calibration_offset_.z.min = nh_private.param<int>("z/min", 1000);
+  calibration_offset_.F.max = nh_private.param<int>("F/max", 2000);
+  calibration_offset_.F.center = nh_private.param<int>("F/center", 1500);
+  calibration_offset_.F.min = nh_private.param<int>("F/min", 1000);
 
   try
   {
@@ -325,7 +340,18 @@ void fcuIO::commandCallback(fcu_common::ExtendedCommand::ConstPtr msg)
   OFFBOARD_CONTROL_MODE mode = (OFFBOARD_CONTROL_MODE) msg->mode;
   OFFBOARD_CONTROL_IGNORE ignore = (OFFBOARD_CONTROL_IGNORE) msg->ignore;
 
-  mavrosflight_->send_command(mode, ignore, msg->value1, msg->value2, msg->value3, msg->value4);
+  double x = msg->value1;
+  double y = msg->value2;
+  double z = msg->value3;
+  double F = msg->value4;
+
+  // Apply RC Calibration
+  x = x*(calibration_offset_.x.max - calibration_offset_.x.min)/2000.0 + (calibration_offset_.x.center - 1500)/2000.0;
+  y = y*(calibration_offset_.y.max - calibration_offset_.y.min)/2000.0 + (calibration_offset_.y.center - 1500)/2000.0;
+  z = z*(calibration_offset_.z.max - calibration_offset_.z.min)/2000.0 + (calibration_offset_.z.center - 1500)/2000.0;
+  F = F*(calibration_offset_.F.max - calibration_offset_.F.min)/2000.0 + (calibration_offset_.F.min - 1000)/1000.0;
+
+  mavrosflight_->send_command(mode, ignore, x, y, z, F);
 }
 
 } // namespace fcu_io
