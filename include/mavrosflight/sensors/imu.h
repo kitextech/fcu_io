@@ -31,6 +31,8 @@ public:
    * \param[out] zgyro The rate gyro Z value (rad/s)
    * \return True if the measurement is valid
    */
+  bool correct(mavlink_camera_stamped_small_imu_t msg,
+               double *xacc, double *yacc, double *zacc, double *xgyro, double *ygyro, double *zgyro, double *temperature);
   bool correct(mavlink_small_imu_t msg,
                double *xacc, double *yacc, double *zacc, double *xgyro, double *ygyro, double *zgyro, double *temperature);
 

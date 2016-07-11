@@ -116,6 +116,9 @@ void fcuIO::handle_heartbeat_msg()
   ROS_INFO_ONCE("Got HEARTBEAT, connected.");
 }
 
+//This function stamps the IMU message
+//We will probably want to modify how that is done
+//and also make a similar function for stamping camera messages
 void fcuIO::handle_small_imu_msg(const mavlink_message_t &msg)
 {
   mavlink_small_imu_t imu;
