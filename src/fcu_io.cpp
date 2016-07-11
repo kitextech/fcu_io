@@ -17,9 +17,11 @@ fcuIO::fcuIO()
   ros::NodeHandle nh;
 
   command_sub_ = nh.subscribe("extended_command", 1, &fcuIO::commandCallback, this);
+  image_sub_ = nh.subscribe("camera/image_raw", 1, &fcuIO::cameraCallback, this);
 
   unsaved_params_pub_ = nh.advertise<std_msgs::Bool>("unsaved_params", 1, true);
   imu_pub_ = nh.advertise<sensor_msgs::Imu>("imu/data", 1);
+  image_pub_ = nh.advertise<sensor_msgs::Image>("image_stamped", 1, true);
   imu_temp_pub_ = nh.advertise<sensor_msgs::Temperature>("imu/temperature", 1);
   servo_output_raw_pub_ = nh.advertise<fcu_common::ServoOutputRaw>("servo_output_raw", 1);
   rc_raw_pub_ = nh.advertise<fcu_common::ServoOutputRaw>("rc_raw", 1);
@@ -66,6 +68,9 @@ void fcuIO::handle_mavlink_message(const mavlink_message_t &msg)
     break;
   case MAVLINK_MSG_ID_SMALL_IMU:
     handle_small_imu_msg(msg);
+    break;
+  case MAVLINK_MSG_ID_CAMERA_STAMPED_SMALL_IMU:
+    handle_camera_stamped_small_imu_msg(msg);
     break;
   case MAVLINK_MSG_ID_SERVO_OUTPUT_RAW:
     handle_servo_output_raw_msg(msg);
@@ -116,9 +121,6 @@ void fcuIO::handle_heartbeat_msg()
   ROS_INFO_ONCE("Got HEARTBEAT, connected.");
 }
 
-//This function stamps the IMU message
-//We will probably want to modify how that is done
-//and also make a similar function for stamping camera messages
 void fcuIO::handle_small_imu_msg(const mavlink_message_t &msg)
 {
   mavlink_small_imu_t imu;
@@ -129,6 +131,39 @@ void fcuIO::handle_small_imu_msg(const mavlink_message_t &msg)
 
   sensor_msgs::Temperature temp_msg;
   temp_msg.header.stamp = imu_msg.header.stamp;
+
+  bool valid = imu_.correct(imu,
+                            &imu_msg.linear_acceleration.x,
+                            &imu_msg.linear_acceleration.y,
+                            &imu_msg.linear_acceleration.z,
+                            &imu_msg.angular_velocity.x,
+                            &imu_msg.angular_velocity.y,
+                            &imu_msg.angular_velocity.z,
+                            &temp_msg.temperature);
+
+  if (valid)
+  {
+    imu_pub_.publish(imu_msg);
+    imu_temp_pub_.publish(temp_msg);
+  }
+}
+
+void fcuIO::handle_camera_stamped_small_imu_msg(const mavlink_message_t &msg)
+{
+  mavlink_camera_stamped_small_imu_t imu;
+  mavlink_msg_camera_stamped_small_imu_decode(&msg, &imu);
+
+  sensor_msgs::Imu imu_msg;
+  imu_msg.header.stamp = mavrosflight_->time.get_ros_time_us(imu.time_boot_us);
+
+  sensor_msgs::Temperature temp_msg;
+  temp_msg.header.stamp = imu_msg.header.stamp;
+
+  if (imu.image == true)
+  {
+    stamp_queue.push(imu_msg.header.stamp);
+  }
+  stampMatch();
 
   bool valid = imu_.correct(imu,
                             &imu_msg.linear_acceleration.x,
@@ -277,6 +312,34 @@ void fcuIO::commandCallback(fcu_common::ExtendedCommand::ConstPtr msg)
   mavlink_msg_offboard_control_pack(1, 50, &mavlink_msg,
                                     mode, ignore, (int16_t)v1, (int16_t)v2, (int16_t)v3, (int16_t)v4);
   mavrosflight_->serial.send_message(mavlink_msg);
+}
+
+void fcuIO::cameraCallback(const sensor_msgs::Image msg)
+{
+  sensor_msgs::Image cam_msg = msg;
+  image_queue.push(cam_msg);
+}
+
+void fcuIO::stampMatch()
+{
+  if (stamp_queue.empty() == false && image_queue.empty() == false)
+  {
+    if (image_queue.size() > 1)
+    {
+      image_queue.pop();
+    }
+    if (stamp_queue.size() > 1)
+    {
+      stamp_queue.pop();
+    }
+
+    sensor_msgs::Image cam_msg = image_queue.front();
+    image_queue.pop();
+    ros::Time stamp = stamp_queue.front();
+    stamp_queue.pop();
+    cam_msg.header.stamp = stamp;
+    image_pub_.publish(cam_msg);
+  }
 }
 
 bool fcuIO::paramGetSrvCallback(fcu_io::ParamGet::Request &req, fcu_io::ParamGet::Response &res)
