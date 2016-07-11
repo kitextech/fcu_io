@@ -21,7 +21,7 @@ fcuIO::fcuIO()
 
   unsaved_params_pub_ = nh.advertise<std_msgs::Bool>("unsaved_params", 1, true);
   imu_pub_ = nh.advertise<sensor_msgs::Imu>("imu/data", 1);
-  image_pub_ = nh.advertise<sensor_msgs::Image>("image_stamped", 1, true);
+  image_pub_ = nh.advertise<sensor_msgs::Image>("image_raw", 1, true);
   imu_temp_pub_ = nh.advertise<sensor_msgs::Temperature>("imu/temperature", 1);
   servo_output_raw_pub_ = nh.advertise<fcu_common::ServoOutputRaw>("servo_output_raw", 1);
   rc_raw_pub_ = nh.advertise<fcu_common::ServoOutputRaw>("rc_raw", 1);
