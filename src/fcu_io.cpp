@@ -322,21 +322,28 @@ void fcuIO::cameraCallback(const sensor_msgs::Image msg)
 
 void fcuIO::stampMatch()
 {
-  if (stamp_queue.empty() == false && image_queue.empty() == false)
+  if (stamp_queue.size() > 1)
   {
-    if (image_queue.size() > 1)
+    //ROS_INFO_STREAM("Throw Away stamp");
+    stamp_queue.pop();
+  }
+  if (image_queue.empty() == false && stamp_queue.empty() == true){
+    //ROS_INFO_STREAM("Throw Away Image");
+    image_queue.pop();
+  }
+  else if (stamp_queue.empty() == false && image_queue.empty() == false)
+  {
+    //ROS_INFO_STREAM("stamp_queue: " << stamp_queue.size() << " image_queue: " << image_queue.size());
+    /*if (image_queue.size() > 1)
     {
       image_queue.pop();
-    }
-    if (stamp_queue.size() > 1)
-    {
-      stamp_queue.pop();
-    }
+    }*/
 
     sensor_msgs::Image cam_msg = image_queue.front();
     image_queue.pop();
     ros::Time stamp = stamp_queue.front();
     stamp_queue.pop();
+    stamp.nsec += 7756000;
     cam_msg.header.stamp = stamp;
     image_pub_.publish(cam_msg);
   }
