@@ -94,6 +94,7 @@ private:
 
   std::queue<ros::Time> stamp_queue;
   std::queue<sensor_msgs::Image> image_queue;
+  bool missed_stamp;
 
   ros::ServiceServer param_get_srv_;
   ros::ServiceServer param_set_srv_;
@@ -102,6 +103,9 @@ private:
   mavrosflight::MavROSflight* mavrosflight_;
   mavrosflight::sensors::DifferentialPressure diff_pressure_;
   mavrosflight::sensors::Imu imu_;
+
+  int time_offset;
+  int stamp_queue_size;
 };
 
 } // namespace fcu_io

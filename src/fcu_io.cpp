@@ -16,12 +16,20 @@ fcuIO::fcuIO()
 {
   ros::NodeHandle nh;
 
+  ros::NodeHandle nh_private("~");
+  std::string port = nh_private.param<std::string>("port", "/dev/ttyUSB0");
+  int baud_rate = nh_private.param<int>("baud_rate", 115200);
+  std::string image_sub_name = nh_private.param<std::string>("image_sub_name", "image_raw");
+  std::string image_pub_name = nh_private.param<std::string>("image_pub_name", "image_stamped");
+  time_offset = nh_private.param<int>("time_offset",0);//This is the time shift to be added to the camera stamp in nanoseconds
+  stamp_queue_size = nh_private.param<int>("stamp_queue_size",1);
+
   command_sub_ = nh.subscribe("extended_command", 1, &fcuIO::commandCallback, this);
-  image_sub_ = nh.subscribe("camera/image_raw", 1, &fcuIO::cameraCallback, this);
+  image_sub_ = nh.subscribe(image_sub_name, 1, &fcuIO::cameraCallback, this);
 
   unsaved_params_pub_ = nh.advertise<std_msgs::Bool>("unsaved_params", 1, true);
   imu_pub_ = nh.advertise<sensor_msgs::Imu>("imu/data", 1);
-  image_pub_ = nh.advertise<sensor_msgs::Image>("image_raw", 1, true);
+  image_pub_ = nh.advertise<sensor_msgs::Image>(image_pub_name, 1, true);
   imu_temp_pub_ = nh.advertise<sensor_msgs::Temperature>("imu/temperature", 1);
   servo_output_raw_pub_ = nh.advertise<fcu_common::ServoOutputRaw>("servo_output_raw", 1);
   rc_raw_pub_ = nh.advertise<fcu_common::ServoOutputRaw>("rc_raw", 1);
@@ -32,9 +40,6 @@ fcuIO::fcuIO()
   param_set_srv_ = nh.advertiseService("param_set", &fcuIO::paramSetSrvCallback, this);
   param_write_srv_ = nh.advertiseService("param_write", &fcuIO::paramWriteSrvCallback, this);
 
-  ros::NodeHandle nh_private("~");
-  std::string port = nh_private.param<std::string>("port", "/dev/ttyUSB0");
-  int baud_rate = nh_private.param<int>("baud_rate", 115200);
 
   try
   {
@@ -322,28 +327,31 @@ void fcuIO::cameraCallback(const sensor_msgs::Image msg)
 
 void fcuIO::stampMatch()
 {
-  if (stamp_queue.size() > 1)
-  {
+  if (stamp_queue.size() > stamp_queue_size){
     //ROS_INFO_STREAM("Throw Away stamp");
     stamp_queue.pop();
   }
-  if (image_queue.empty() == false && stamp_queue.empty() == true){
+  if (stamp_queue.empty() && image_queue.empty() && stamp_queue_size > 1){
+    missed_stamp = true;
+  }
+  else if (!image_queue.empty() && missed_stamp){
+    //ROS_INFO_STREAM("Throw Away Image");
+    image_queue.pop();
+    missed_stamp = false;
+  }
+  else if (!image_queue.empty() && stamp_queue.empty()){
     //ROS_INFO_STREAM("Throw Away Image");
     image_queue.pop();
   }
-  else if (stamp_queue.empty() == false && image_queue.empty() == false)
+  else if (!stamp_queue.empty() && !image_queue.empty())
   {
     //ROS_INFO_STREAM("stamp_queue: " << stamp_queue.size() << " image_queue: " << image_queue.size());
-    /*if (image_queue.size() > 1)
-    {
-      image_queue.pop();
-    }*/
 
     sensor_msgs::Image cam_msg = image_queue.front();
     image_queue.pop();
     ros::Time stamp = stamp_queue.front();
     stamp_queue.pop();
-    stamp.nsec += 7756000;
+    stamp.nsec += time_offset;
     cam_msg.header.stamp = stamp;
     image_pub_.publish(cam_msg);
   }
