@@ -22,7 +22,8 @@ fcuIO::fcuIO()
   std::string image_sub_name = nh_private.param<std::string>("image_sub_name", "image_raw");
   std::string image_pub_name = nh_private.param<std::string>("image_pub_name", "image_stamped");
   time_offset = nh_private.param<int>("time_offset",0);//This is the time shift to be added to the camera stamp in nanoseconds
-  stamp_queue_size = nh_private.param<int>("stamp_queue_size",1);
+  min_image_lag = nh_private.param<double>("min_image_lag",0);//in seconds
+  max_image_lag = nh_private.param<double>("max_image_lag",.02);//in seconds
 
   command_sub_ = nh.subscribe("extended_command", 1, &fcuIO::commandCallback, this);
   image_sub_ = nh.subscribe(image_sub_name, 1, &fcuIO::cameraCallback, this);
@@ -35,6 +36,9 @@ fcuIO::fcuIO()
   rc_raw_pub_ = nh.advertise<fcu_common::ServoOutputRaw>("rc_raw", 1);
   diff_pressure_pub_ = nh.advertise<sensor_msgs::FluidPressure>("diff_pressure", 1);
   temperature_pub_ = nh.advertise<sensor_msgs::Temperature>("temperature", 1);
+
+  imu_time_ = nh.advertise<std_msgs::Time>("imu_time", 1);
+  image_time_ = nh.advertise<std_msgs::Time>("image_time", 1);
 
   param_get_srv_ = nh.advertiseService("param_get", &fcuIO::paramGetSrvCallback, this);
   param_set_srv_ = nh.advertiseService("param_set", &fcuIO::paramSetSrvCallback, this);
@@ -155,6 +159,7 @@ void fcuIO::handle_small_imu_msg(const mavlink_message_t &msg)
 
 void fcuIO::handle_camera_stamped_small_imu_msg(const mavlink_message_t &msg)
 {
+
   mavlink_camera_stamped_small_imu_t imu;
   mavlink_msg_camera_stamped_small_imu_decode(&msg, &imu);
 
@@ -166,6 +171,8 @@ void fcuIO::handle_camera_stamped_small_imu_msg(const mavlink_message_t &msg)
 
   if (imu.image == true)
   {
+    //imu_time_.publish(ros::Time::now());
+    stamp_time_queue.push(ros::Time::now());
     stamp_queue.push(imu_msg.header.stamp);
   }
   stampMatch();
@@ -321,39 +328,44 @@ void fcuIO::commandCallback(fcu_common::ExtendedCommand::ConstPtr msg)
 
 void fcuIO::cameraCallback(const sensor_msgs::Image msg)
 {
+  //image_time_.publish(ros::Time::now());
+  image_time_queue.push(ros::Time::now());
   sensor_msgs::Image cam_msg = msg;
   image_queue.push(cam_msg);
 }
 
 void fcuIO::stampMatch()
 {
-  if (stamp_queue.size() > stamp_queue_size){
-    //ROS_INFO_STREAM("Throw Away stamp");
-    stamp_queue.pop();
-  }
-  if (stamp_queue.empty() && image_queue.empty() && stamp_queue_size > 1){
-    missed_stamp = true;
-  }
-  else if (!image_queue.empty() && missed_stamp){
-    //ROS_INFO_STREAM("Throw Away Image");
-    image_queue.pop();
-    missed_stamp = false;
-  }
-  else if (!image_queue.empty() && stamp_queue.empty()){
-    //ROS_INFO_STREAM("Throw Away Image");
-    image_queue.pop();
-  }
-  else if (!stamp_queue.empty() && !image_queue.empty())
-  {
-    //ROS_INFO_STREAM("stamp_queue: " << stamp_queue.size() << " image_queue: " << image_queue.size());
+  if (!stamp_queue.empty() && !image_queue.empty()){
+    if (stamp_time_queue.empty() || image_time_queue.empty()){
+      ROS_ERROR_STREAM("Queue and Time_Queue are not synced.");
+      return;
+    }
+    ros::Time image_time = image_time_queue.front();
+    ros::Time stamp_time = stamp_time_queue.front();
+    double time_diff = image_time.toSec() - stamp_time.toSec();
 
-    sensor_msgs::Image cam_msg = image_queue.front();
-    image_queue.pop();
-    ros::Time stamp = stamp_queue.front();
-    stamp_queue.pop();
-    stamp.nsec += time_offset;
-    cam_msg.header.stamp = stamp;
-    image_pub_.publish(cam_msg);
+    if (time_diff < min_image_lag){
+      image_time_queue.pop();
+      image_queue.pop();
+    }
+    else if (time_diff > max_image_lag){
+      stamp_time_queue.pop();
+      stamp_queue.pop();
+    }
+    else{
+      //ROS_INFO_STREAM("stamp_queue: " << stamp_queue.size() << " image_queue: " << image_queue.size());
+
+      sensor_msgs::Image cam_msg = image_queue.front();
+      image_queue.pop();
+      image_time_queue.pop();
+      ros::Time stamp = stamp_queue.front();
+      stamp_queue.pop();
+      stamp_time_queue.pop();
+      stamp.nsec += time_offset;
+      cam_msg.header.stamp = stamp;
+      image_pub_.publish(cam_msg);
+    }
   }
 }
 

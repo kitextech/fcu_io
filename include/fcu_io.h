@@ -20,6 +20,7 @@
 #include <sensor_msgs/FluidPressure.h>
 #include <sensor_msgs/Temperature.h>
 #include <std_srvs/Trigger.h>
+#include <std_msgs/Time.h>
 
 #include <fcu_common/ExtendedCommand.h>
 #include <fcu_common/ServoOutputRaw.h>
@@ -92,8 +93,13 @@ private:
   std::map<std::string, ros::Publisher> named_value_int_pubs_;
   std::map<std::string, ros::Publisher> named_value_float_pubs_;\
 
+  ros::Publisher imu_time_;
+  ros::Publisher image_time_;
+
   std::queue<ros::Time> stamp_queue;
   std::queue<sensor_msgs::Image> image_queue;
+  std::queue<ros::Time> stamp_time_queue;
+  std::queue<ros::Time> image_time_queue;
   bool missed_stamp;
 
   ros::ServiceServer param_get_srv_;
@@ -105,8 +111,10 @@ private:
   mavrosflight::sensors::Imu imu_;
 
   int time_offset;
-  int stamp_queue_size;
+  double min_image_lag;
+  double max_image_lag;
 };
+
 
 } // namespace fcu_io
 
