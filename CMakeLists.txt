@@ -8,19 +8,15 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   cmake_modules
+  dynamic_reconfigure
 )
 find_package(Eigen REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system thread)
 
-###################################
-## catkin specific configuration ##
-###################################
-# 
-# add_message_files(
-#   FILES
-#   Command.msg
-#   ServoOutputRaw.msg
-# )
+generate_dynamic_reconfigure_options(
+  cfg/param.cfg
+)
+
 
 add_service_files(
   FILES
