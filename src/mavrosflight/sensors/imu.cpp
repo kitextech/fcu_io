@@ -40,7 +40,7 @@ void Imu::start_temp_calibration()
   A_.clear();
 }
 
-bool Imu::calibrate_temp(mavlink_small_imu_t msg)
+bool Imu::calibrate_temp(mavlink_camera_stamped_small_imu_t msg)
 {
   if (first_time_)
   {
@@ -122,20 +122,20 @@ bool Imu::correct(mavlink_camera_stamped_small_imu_t msg, double *xacc, double *
   return true;
 }
 
-bool Imu::correct(mavlink_small_imu_t msg,
-                  double *xacc, double *yacc, double *zacc, double *xgyro, double *ygyro, double *zgyro, double *temp)
-{
-  *xacc = msg.xacc;
-  *yacc = msg.yacc;
-  *zacc = msg.zacc;
+//bool Imu::correct(mavlink_small_imu_t msg,
+//                  double *xacc, double *yacc, double *zacc, double *xgyro, double *ygyro, double *zgyro, double *temp)
+//{
+//  *xacc = msg.xacc;
+//  *yacc = msg.yacc;
+//  *zacc = msg.zacc;
 
-  *xgyro = msg.xgyro;
-  *ygyro = msg.ygyro;
-  *zgyro = msg.zgyro;
+//  *xgyro = msg.xgyro;
+//  *ygyro = msg.ygyro;
+//  *zgyro = msg.zgyro;
 
-  *temp = msg.temperature;
-  return true;
-}
+//  *temp = msg.temperature;
+//  return true;
+//}
 
 } // namespace sensors
 } // namespace mavrosflight

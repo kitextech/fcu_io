@@ -41,7 +41,7 @@ public:
    * \param msg The raw IMU message
    * \return True if the calibration is done
    */
-  bool calibrate_temp(mavlink_small_imu_t msg);
+  bool calibrate_temp(mavlink_camera_stamped_small_imu_t msg);
 
   /**
    * \brief Get corrected measurement values
@@ -56,8 +56,8 @@ public:
    */
   bool correct(mavlink_camera_stamped_small_imu_t msg,
                double *xacc, double *yacc, double *zacc, double *xgyro, double *ygyro, double *zgyro, double *temperature);
-  bool correct(mavlink_small_imu_t msg,
-               double *xacc, double *yacc, double *zacc, double *xgyro, double *ygyro, double *zgyro, double *temperature);
+//  bool correct(mavlink_small_imu_t msg,
+//               double *xacc, double *yacc, double *zacc, double *xgyro, double *ygyro, double *zgyro, double *temperature);
 
   /// These are the publicly available versions of the accel calibration
   /// The const stuff is to make it read-only

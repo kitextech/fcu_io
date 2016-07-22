@@ -14,7 +14,7 @@
 namespace fcu_io
 {
 
-fcuIO::fcuIO() : nh_("~")
+fcuIO::fcuIO()
 {
   command_sub_ = nh_.subscribe("extended_command", 1, &fcuIO::commandCallback, this);
 
@@ -30,13 +30,13 @@ fcuIO::fcuIO() : nh_("~")
   image_sub_ = nh_.subscribe(image_sub_name, 1, &fcuIO::cameraCallback, this);
 
   unsaved_params_pub_ = nh_.advertise<std_msgs::Bool>("unsaved_params", 1, true);
-  imu_pub_ = nh_.advertise<sensor_msgs::Imu>("imu/data", 1);
+//  imu_pub_ = nh_.advertise<sensor_msgs::Imu>("imu/data", 1);
   image_pub_ = nh_.advertise<sensor_msgs::Image>(image_pub_name, 1, true);
-  imu_temp_pub_ = nh_.advertise<sensor_msgs::Temperature>("imu/temperature", 1);
-  servo_output_raw_pub_ = nh_.advertise<fcu_common::ServoOutputRaw>("servo_output_raw", 1);
-  rc_raw_pub_ = nh_.advertise<fcu_common::ServoOutputRaw>("rc_raw", 1);
-  diff_pressure_pub_ = nh_.advertise<sensor_msgs::FluidPressure>("diff_pressure", 1);
-  temperature_pub_ = nh_.advertise<sensor_msgs::Temperature>("temperature", 1);
+//  imu_temp_pub_ = nh_.advertise<sensor_msgs::Temperature>("imu/temperature", 1);
+//  servo_output_raw_pub_ = nh_.advertise<fcu_common::ServoOutputRaw>("servo_output_raw", 1);
+//  rc_raw_pub_ = nh_.advertise<fcu_common::ServoOutputRaw>("rc_raw", 1);
+//  diff_pressure_pub_ = nh_.advertise<sensor_msgs::FluidPressure>("diff_pressure", 1);
+//  temperature_pub_ = nh_.advertise<sensor_msgs::Temperature>("temperature", 1);
 
   imu_time_ = nh_.advertise<std_msgs::Time>("imu_time", 1);
   image_time_ = nh_.advertise<std_msgs::Time>("image_time", 1);
@@ -88,9 +88,9 @@ void fcuIO::handle_mavlink_message(const mavlink_message_t &msg)
   case MAVLINK_MSG_ID_ATTITUDE:
     handle_attitude_msg(msg);
     break;
-  case MAVLINK_MSG_ID_SMALL_IMU:
-    handle_small_imu_msg(msg);
-    break;
+//  case MAVLINK_MSG_ID_SMALL_IMU:
+//    handle_small_imu_msg(msg);
+//    break;
   case MAVLINK_MSG_ID_CAMERA_STAMPED_SMALL_IMU:
     handle_camera_stamped_small_imu_msg(msg);
     break;
@@ -224,16 +224,81 @@ void fcuIO::handle_attitude_msg(const mavlink_message_t &msg)
   attitude_pub_.publish(attitude_msg);
 }
 
-void fcuIO::handle_small_imu_msg(const mavlink_message_t &msg)
+//void fcuIO::handle_small_imu_msg(const mavlink_message_t &msg)
+//{
+//  mavlink_small_imu_t imu;
+//  mavlink_msg_small_imu_decode(&msg, &imu);
+
+//  sensor_msgs::Imu imu_msg;
+//  imu_msg.header.stamp = mavrosflight_->time.get_ros_time_us(imu.time_boot_us);
+
+//  sensor_msgs::Temperature temp_msg;
+//  temp_msg.header.stamp = imu_msg.header.stamp;
+
+//  // This is so we can eventually make calibrating the IMU an external service
+//  if (imu_.is_calibrating())
+//  {
+//    if(imu_.calibrate_temp(imu))
+//    {
+//      ROS_INFO("IMU temperature calibration complete:\n xm = %f, ym = %f, zm = %f xb = %f yb = %f, zb = %f",
+//               imu_.xm(),imu_.ym(),imu_.zm(),imu_.xb(),imu_.yb(),imu_.zb());
+
+//      // calibration is done, send params to the param server
+//      mavrosflight_->param.set_param_value("ACC_X_TEMP_COMP", imu_.xm());
+//      mavrosflight_->param.set_param_value("ACC_Y_TEMP_COMP", imu_.ym());
+//      mavrosflight_->param.set_param_value("ACC_Z_TEMP_COMP", imu_.zm());
+//      mavrosflight_->param.set_param_value("ACC_X_BIAS", imu_.xb());
+//      mavrosflight_->param.set_param_value("ACC_Y_BIAS", imu_.yb());
+//      mavrosflight_->param.set_param_value("ACC_Z_BIAS", imu_.zb());
+
+//      ROS_WARN("Write params to save new temperature calibration!");
+//    }
+//  }
+
+//  bool valid = imu_.correct(imu,
+//                            &imu_msg.linear_acceleration.x,
+//                            &imu_msg.linear_acceleration.y,
+//                            &imu_msg.linear_acceleration.z,
+//                            &imu_msg.angular_velocity.x,
+//                            &imu_msg.angular_velocity.y,
+//                            &imu_msg.angular_velocity.z,
+//                            &temp_msg.temperature);
+
+//  if (valid)
+//  {
+//    if(imu_pub_.getTopic().empty())
+//    {
+//      imu_pub_ = nh_.advertise<sensor_msgs::Imu>("imu/data", 1);
+//    }
+//    imu_pub_.publish(imu_msg);
+
+//    if(imu_temp_pub_.getTopic().empty())
+//    {
+//      imu_temp_pub_ = nh_.advertise<sensor_msgs::Temperature>("imu/temperature", 1);
+//    }
+//    imu_temp_pub_.publish(temp_msg);
+//  }
+//}
+
+void fcuIO::handle_camera_stamped_small_imu_msg(const mavlink_message_t &msg)
 {
-  mavlink_small_imu_t imu;
-  mavlink_msg_small_imu_decode(&msg, &imu);
+  mavlink_camera_stamped_small_imu_t imu;
+  mavlink_msg_camera_stamped_small_imu_decode(&msg, &imu);
 
   sensor_msgs::Imu imu_msg;
   imu_msg.header.stamp = mavrosflight_->time.get_ros_time_us(imu.time_boot_us);
 
   sensor_msgs::Temperature temp_msg;
   temp_msg.header.stamp = imu_msg.header.stamp;
+
+  //  Figure out Camera Stamp and data association
+  if (imu.image == true)
+  {
+    //imu_time_.publish(ros::Time::now());
+    stamp_time_queue.push(ros::Time::now());
+    stamp_queue.push(imu_msg.header.stamp);
+  }
+  stampMatch();
 
   // This is so we can eventually make calibrating the IMU an external service
   if (imu_.is_calibrating())
@@ -276,42 +341,6 @@ void fcuIO::handle_small_imu_msg(const mavlink_message_t &msg)
     {
       imu_temp_pub_ = nh_.advertise<sensor_msgs::Temperature>("imu/temperature", 1);
     }
-    imu_temp_pub_.publish(temp_msg);
-  }
-}
-
-void fcuIO::handle_camera_stamped_small_imu_msg(const mavlink_message_t &msg)
-{
-
-  mavlink_camera_stamped_small_imu_t imu;
-  mavlink_msg_camera_stamped_small_imu_decode(&msg, &imu);
-
-  sensor_msgs::Imu imu_msg;
-  imu_msg.header.stamp = mavrosflight_->time.get_ros_time_us(imu.time_boot_us);
-
-  sensor_msgs::Temperature temp_msg;
-  temp_msg.header.stamp = imu_msg.header.stamp;
-
-  if (imu.image == true)
-  {
-    //imu_time_.publish(ros::Time::now());
-    stamp_time_queue.push(ros::Time::now());
-    stamp_queue.push(imu_msg.header.stamp);
-  }
-  stampMatch();
-
-  bool valid = imu_.correct(imu,
-                            &imu_msg.linear_acceleration.x,
-                            &imu_msg.linear_acceleration.y,
-                            &imu_msg.linear_acceleration.z,
-                            &imu_msg.angular_velocity.x,
-                            &imu_msg.angular_velocity.y,
-                            &imu_msg.angular_velocity.z,
-                            &temp_msg.temperature);
-
-  if (valid)
-  {
-    imu_pub_.publish(imu_msg);
     imu_temp_pub_.publish(temp_msg);
   }
 }
@@ -538,15 +567,17 @@ void fcuIO::stampMatch()
     ros::Time stamp_time = stamp_time_queue.front();
     double time_diff = image_time.toSec() - stamp_time.toSec();
 
-    if (time_diff < min_image_lag){
-      image_time_queue.pop();
-      image_queue.pop();
-    }
-    else if (time_diff > max_image_lag){
-      stamp_time_queue.pop();
-      stamp_queue.pop();
-    }
-    else{
+//    if (time_diff < min_image_lag){
+//      image_time_queue.pop();
+//      image_queue.pop();
+//      ROS_INFO("toss image, too little lag");
+//    }
+//    else if (time_diff > max_image_lag){
+//      stamp_time_queue.pop();
+//      stamp_queue.pop();
+//      ROS_INFO("toss image, too much lag");
+//    }
+//    else{
       //ROS_INFO_STREAM("stamp_queue: " << stamp_queue.size() << " image_queue: " << image_queue.size());
 
       sensor_msgs::Image cam_msg = image_queue.front();
@@ -558,7 +589,10 @@ void fcuIO::stampMatch()
       stamp.nsec += time_offset;
       cam_msg.header.stamp = stamp;
       image_pub_.publish(cam_msg);
-    }
+      if(image_queue.size() > 0)
+      {
+        ROS_ERROR("mismatched messages");
+      }
   }
 }
 
