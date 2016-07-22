@@ -578,7 +578,6 @@ void fcuIO::stampMatch()
 //      ROS_INFO("toss image, too much lag");
 //    }
 //    else{
-      //ROS_INFO_STREAM("stamp_queue: " << stamp_queue.size() << " image_queue: " << image_queue.size());
 
       sensor_msgs::Image cam_msg = image_queue.front();
       image_queue.pop();
@@ -592,6 +591,11 @@ void fcuIO::stampMatch()
       if(image_queue.size() > 0)
       {
         ROS_ERROR("mismatched messages");
+      }
+      while(stamp_queue.size() > 1)
+      {
+        stamp_queue.pop();
+//        ROS_INFO_STREAM("stamp_queue: " << stamp_queue.size() << " image_queue: " << image_queue.size());
       }
   }
 }
