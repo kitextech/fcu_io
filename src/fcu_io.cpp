@@ -204,7 +204,6 @@ void fcuIO::handle_attitude_msg(const mavlink_message_t &msg)
   attitude_pub_.publish(attitude_msg);
 }
 
-
 void fcuIO::handle_small_imu_msg(const mavlink_message_t &msg)
 {
   mavlink_small_imu_t imu;
@@ -437,22 +436,22 @@ void fcuIO::commandCallback(fcu_common::ExtendedCommand::ConstPtr msg)
   OFFBOARD_CONTROL_MODE mode = (OFFBOARD_CONTROL_MODE) msg->mode;
   OFFBOARD_CONTROL_IGNORE ignore = (OFFBOARD_CONTROL_IGNORE) msg->ignore;
 
-  int v1 = (int)(msg->value1 * 1000);
-  int v2 = (int)(msg->value2 * 1000);
-  int v3 = (int)(msg->value3 * 1000);
-  int v4 = (int)(msg->value4 * 1000);
+  float x = msg->x;
+  float y = msg->y;
+  float z = msg->z;
+  float F = msg->F;
 
   switch (mode)
   {
   case MODE_PASS_THROUGH:
-    v1 = saturate(v1, -1000, 1000);
-    v2 = saturate(v2, -1000, 1000);
-    v3 = saturate(v3, -1000, 1000);
-    v4 = saturate(v4, -1000, 1000);
+    x = saturate(x, -1.0f, 1.0f);
+    y = saturate(y, -1.0f, 1.0f);
+    z = saturate(z, -1.0f, 1.0f);
+    F = saturate(F, 0.0f, 1.0f);
     break;
   case MODE_ROLLRATE_PITCHRATE_YAWRATE_THROTTLE:
   case MODE_ROLL_PITCH_YAWRATE_THROTTLE:
-    v4 = saturate(v4, 0, 1000);
+    F = saturate(F, 0.0f, 1.0f);
     break;
   case MODE_ROLL_PITCH_YAWRATE_ALTITUDE:
     break;
@@ -460,7 +459,7 @@ void fcuIO::commandCallback(fcu_common::ExtendedCommand::ConstPtr msg)
 
   mavlink_message_t mavlink_msg;
   mavlink_msg_offboard_control_pack(1, 50, &mavlink_msg,
-                                    mode, ignore, (int16_t)v1, (int16_t)v2, (int16_t)v3, (int16_t)v4);
+                                    mode, ignore, x, y, z, F);
   mavrosflight_->serial.send_message(mavlink_msg);
 }
 
