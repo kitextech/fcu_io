@@ -20,7 +20,7 @@
 
 #include <stdint.h>
 
-#define MAVLINK_SERIAL_READ_BUF_SIZE 256
+#define MAVLINK_SERIAL_READ_BUF_SIZE MAVLINK_MSG_ID_SMALL_IMU_LEN
 
 namespace mavrosflight
 {
