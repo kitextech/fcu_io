@@ -9,9 +9,9 @@ Common
 Camera0
 {
 	CalibrationFile;												Camera-Calibration file for intrinsics
-	qCM_x  -0.5;										X-entry of IMU to Camera quaterion (JPL)
-	qCM_y  0.5;									Y-entry of IMU to Camera quaterion (JPL)
-	qCM_z  -0.5;											Z-entry of IMU to Camera quaterion (JPL)
+	qCM_x  0.5;										X-entry of IMU to Camera quaterion (JPL)
+	qCM_y  -0.5;									Y-entry of IMU to Camera quaterion (JPL)
+	qCM_z  0.5;											Z-entry of IMU to Camera quaterion (JPL)
 	qCM_w  0.5;											W-entry of IMU to Camera quaterion (JPL)
 	MrMC_x 0.0;		t									X-entry of IMU to Camera vector (expressed in IMU CF) [m]
 	MrMC_y 0.0;										Y-entry of IMU to Camera vector (expressed in IMU CF) [m]
@@ -149,9 +149,9 @@ Prediction
         pos_0 1e-4;								X-covariance parameter of position prediction [m^2/s]
         pos_1 1e-4;								Y-covariance parameter of position prediction [m^2/s]
         pos_2 1e-4;								Z-covariance parameter of position prediction [m^2/s]
-        vel_0 4e-5; 4e-6						X-covariance parameter of velocity prediction [m^2/s^3]
-        vel_1 4e-5;								Y-covariance parameter of velocity prediction [m^2/s^3]
-        vel_2 4e-5;								Z-covariance parameter of velocity prediction [m^2/s^3]
+        vel_0 4e-4; 4e-6						X-covariance parameter of velocity prediction [m^2/s^3]
+        vel_1 4e-4;								Y-covariance parameter of velocity prediction [m^2/s^3]
+        vel_2 4e-4;								Z-covariance parameter of velocity prediction [m^2/s^3]
         acb_0 1e-6;								X-covariance parameter of accelerometer bias prediction [m^2/s^5]
         acb_1 1e-6;								Y-covariance parameter of accelerometer bias prediction [m^2/s^5]
         acb_2 1e-6;								Z-covariance parameter of accelerometer bias prediction [m^2/s^5]

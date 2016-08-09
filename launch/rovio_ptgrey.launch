@@ -34,8 +34,8 @@
   </node>
 
   <node pkg="rovio" type="rovio_node" name="rovio" output="screen">
-    <param name="filter_config" value="~/rovio_ws/src/fcu_io2/cfg/rovio.info"/>
-    <param name="camera0_config" value="~/rovio_ws/src/fcu_io2/cfg/cam.yaml"/>
+    <param name="filter_config" value="$(find rovio)/cfg/rovio.info"/>
+    <param name="camera0_config" value="$(find rovio)/cfg/cam.yaml"/>
     <remap from="cam0/image_raw" to="/image_stamped"/>
     <remap from="imu0" to="/imu/data"/>
   </node>
