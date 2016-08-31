@@ -44,7 +44,7 @@ rosrun fcu_io fcu_io_node
 ## Topics
 __Subscriptions__
 
-* __extended_command__ - `fcu_common::ExtendedCommand` - Commands sent to the flight controller to be executed according to the mode and ignore field.
+* __command__ - `fcu_common::Command` - Commands sent to the flight controller to be executed according to the mode and ignore field.
 
 __Publications__ - These are only published if information is being received from MAVlink.  The publisher is registered upon the first message receveived over MAVlink.  If a sensor is missing, or the stream rate of a particular stream is set to `0` on boot-up, then the corresponding publication may not occur.
 * __imu/data__ - `sensor_msgs::Imu` - IMU measurement (orientation and covariance is currently not being populated)
@@ -59,7 +59,7 @@ __Publications__ - These are only published if information is being received fro
 * __rc_raw__ - `fcu_common::ServoOutputRaw - Raw inputs in us from RC (for debugging)
 * __named_value/float/<name>__ - `std_msgs::Float32` - Dynamic publication automatically created from MAVlink.  This is generally used for debugging code on the flight controller.
 * __named_value/int/<name>__ - `std_msgs::Int32` - Dynamic publication automatically created from MAVlink.  This is generally used for debugging code on the flight controller.
-* __named_value/command_struct/<name>__ - `fcu_common::ExtendedCommand` - Dynamic publication automatically created from MAVlink.  This is generally used for debugging the muxing of command structs on the flight controller.
+* __named_value/command_struct/<name>__ - `fcu_common::Command` - Dynamic publication automatically created from MAVlink.  This is generally used for debugging the muxing of command structs on the flight controller.
 
 ## Services
 * __param_get__ - Retrieves a parameter from the flight controller.

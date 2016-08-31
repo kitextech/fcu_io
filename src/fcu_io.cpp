@@ -16,7 +16,7 @@ namespace fcu_io
 
 fcuIO::fcuIO()
 {
-  command_sub_ = nh_.subscribe("extended_command", 1, &fcuIO::commandCallback, this);
+  command_sub_ = nh_.subscribe("command", 1, &fcuIO::commandCallback, this);
 
   unsaved_params_pub_ = nh_.advertise<std_msgs::Bool>("unsaved_params", 1, true);
 
@@ -535,7 +535,7 @@ void fcuIO::handle_distance_sensor(const mavlink_message_t &msg)
 }
 
 
-void fcuIO::commandCallback(fcu_common::ExtendedCommand::ConstPtr msg)
+void fcuIO::commandCallback(fcu_common::Command::ConstPtr msg)
 {
   //! \todo these are hard-coded to match right now; may want to replace with something more robust
   OFFBOARD_CONTROL_MODE mode = (OFFBOARD_CONTROL_MODE) msg->mode;

@@ -22,7 +22,7 @@
 #include <std_srvs/Trigger.h>
 
 #include <fcu_common/Attitude.h>
-#include <fcu_common/ExtendedCommand.h>
+#include <fcu_common/Command.h>
 #include <fcu_common/ServoOutputRaw.h>
 
 #include <fcu_io/ParamGet.h>
@@ -68,7 +68,7 @@ private:
   void handle_distance_sensor(const mavlink_message_t &msg);
 
   // ROS message callbacks
-  void commandCallback(fcu_common::ExtendedCommand::ConstPtr msg);
+  void commandCallback(fcu_common::Command::ConstPtr msg);
 
   // ROS service callbacks
   bool paramGetSrvCallback(fcu_io::ParamGet::Request &req, fcu_io::ParamGet::Response &res);
