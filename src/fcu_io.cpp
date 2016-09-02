@@ -451,18 +451,18 @@ void fcuIO::handle_named_command_struct_msg(const mavlink_message_t &msg)
   if (named_command_struct_pubs_.find(name) == named_command_struct_pubs_.end())
   {
     ros::NodeHandle nh;
-    named_command_struct_pubs_[name] = nh.advertise<fcu_common::ExtendedCommand>("named_value/command_struct/" + name, 1);
+    named_command_struct_pubs_[name] = nh.advertise<fcu_common::Command>("named_value/command_struct/" + name, 1);
   }
 
-  fcu_common::ExtendedCommand command_msg;
+  fcu_common::Command command_msg;
   if(command.type == MODE_PASS_THROUGH)
-    command_msg.mode = fcu_common::ExtendedCommand::MODE_PASS_THROUGH;
+    command_msg.mode = fcu_common::Command::MODE_PASS_THROUGH;
   else if(command.type == MODE_ROLLRATE_PITCHRATE_YAWRATE_THROTTLE)
-    command_msg.mode = fcu_common::ExtendedCommand::MODE_ROLLRATE_PITCHRATE_YAWRATE_THROTTLE;
+    command_msg.mode = fcu_common::Command::MODE_ROLLRATE_PITCHRATE_YAWRATE_THROTTLE;
   else if(command.type == MODE_ROLL_PITCH_YAWRATE_THROTTLE)
-    command_msg.mode = fcu_common::ExtendedCommand::MODE_ROLL_PITCH_YAWRATE_THROTTLE;
+    command_msg.mode = fcu_common::Command::MODE_ROLL_PITCH_YAWRATE_THROTTLE;
   else if(command.type == MODE_ROLL_PITCH_YAWRATE_ALTITUDE)
-    command_msg.mode = fcu_common::ExtendedCommand::MODE_ROLL_PITCH_YAWRATE_ALTITUDE;
+    command_msg.mode = fcu_common::Command::MODE_ROLL_PITCH_YAWRATE_ALTITUDE;
 
   command_msg.ignore = command.ignore;
   command_msg.x = command.x;
