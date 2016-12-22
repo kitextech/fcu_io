@@ -11,12 +11,23 @@ find_package(catkin REQUIRED COMPONENTS
 )
 find_package(Boost REQUIRED COMPONENTS system thread)
 find_package(Eigen REQUIRED)
-pkg_check_modules(YAML yaml-cpp)
+
+# https://github.com/ros-perception/image_common/issues/24
+find_package(PkgConfig)
+pkg_check_modules(YAML_CPP yaml-cpp)
+if(${YAML_CPP_VERSION} VERSION_GREATER 0.5)
+  add_definitions(-DHAVE_NEW_YAMLCPP)
+endif()
+#include_directories(${YAML_CPP_INCLUDE_DIRS})
+#link_directories(${YAML_CPP_LIBRARY_DIRS})
+
+#find_package(yaml-cpp REQUIRED)
+#pkg_check_modules(YAML yaml-cpp)
 
 ###################################
 ## catkin specific configuration ##
 ###################################
-# 
+#
 # add_message_files(
 #   FILES
 #   Command.msg
@@ -51,8 +62,11 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
-  ${YAML_INCLUDEDIR}
+  ${YAML_CPP_INCLUDE_DIRS}
 )
+
+link_directories(${YAML_CPP_LIBRARY_DIRS})
+
 
 # mavrosflight library
 add_library(mavrosflight
@@ -69,7 +83,7 @@ add_dependencies(mavrosflight ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPOR
 target_link_libraries(mavrosflight
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
-  ${YAML_LIBRARIES}
+  ${YAML_CPP_LIBRARIES}
 )
 
 # fcu_io_node
